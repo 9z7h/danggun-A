@@ -61,7 +61,7 @@ open "index.html"        # macOS
 
 - `clusters` — 지도 클러스터 마커 `{x, y, v}` (world 좌표, 매물 수).
 - `pois` — 지도 POI 라벨 `{x, y, t, k}` (건물/학교/시장/공원/관공서).
-- `POOL` — 매물 리스트/상세용 매물 `{d 거래유형, p 가격, k 종류, py 평, m2, fl 층, mg 관리비, dist 역거리, dong, like, chat, best 우수중개소}`.
+- `POOL` — 매물 리스트/상세용 매물 `{d 거래유형, p 가격, k 종류, py 평, m2, fl 층, mg 관리비, dist 역거리, dong, like, chat, best 우수중개소, imgs 실사진 경로배열}`. `imgs`는 20개 매물 전부에 존재(매물당 2~3장, `image/N-n.png`). `imgs`가 비어 있으면 `dtPhotoSVG()` SVG로 폴백.
 - `WISH` — 관심목록 매물 `{ph 사진타입, t 제목, loc, tm 시간, p 가격, chat, like}`.
 - `FILTERS` — 필터칩 옵션 정의.
 - `APPL` — 상세 시설정보 가전 목록 `[이름, 보유여부, svg path]`.
@@ -78,12 +78,12 @@ open "index.html"        # macOS
 ## 제약 / 알려진 한계
 
 - **지도 타일 없음** — 실제 지도 SDK(네이버/카카오 맵) 대신 SVG로 도로·공원·2호선을 양식화. 운영 전환 시 지도 SDK 위에 마커 레이어만 얹는 구조로 교체.
-- **사진 없음** — 외부 이미지 로드 제약으로 방/건물/토지 썸네일을 인라인 SVG 일러스트로 대체. `roomSVG()`, `wPhoto()`(app.js) 자리에 실제 이미지 URL을 넣으면 됨.
+- **상세 캐러셀은 실사진** — 매물 상세 캐러셀은 20개 매물 모두 `image/` 폴더의 실제 PNG 사진(`POOL[i].imgs`, 매물당 2~3장)을 띄움(`imgs` 비면 `dtPhotoSVG()` 폴백). 단, 리스트 카드/관심목록 썸네일은 여전히 인라인 SVG 일러스트(`roomSVG()`, `wPhoto()`(app.js)) — 실제 이미지 URL을 넣으면 동일하게 교체 가능.
 - 빌드 도구·모듈 시스템 없음 — `app.js`가 전역 함수/변수 하나의 스코프. 규모가 더 커지면 ES 모듈로 분리 고려.
 
 ## 완료된 작업
 
-- 매물 상세 사진 영역을 좌우 스와이프 캐러셀(1/3 → 2/3 → 3/3)로 구현. (`dtPhotoSVG()` placeholder 일러스트 3장, 포인터 드래그 + 스냅, 닷/카운터 인디케이터)
+- 매물 상세 사진 영역을 좌우 스와이프 캐러셀로 구현. (포인터 드래그 + 스냅, 닷/카운터 인디케이터) 20개 매물 전부 `POOL[i].imgs`의 실사진 PNG(`image/` 폴더, 매물당 2~3장)를 띄움. 슬라이드 수는 `PHOTO_N = imgs.length`로 자동 조정([app.js:480-481](app.js#L480-L481)). `imgs`가 없는 경우만 `dtPhotoSVG()` placeholder로 폴백.
 - 풀스크린 페이지(상세·관심목록) 전환을 옆에서 미는 슬라이드 → **페이드 + 진입 스켈레톤 UI 0.5초**로 교체(실제 당근 톤). `openPage()`(app.js)가 `.loading` 클래스를 0.5s 부여, `.skel` 오버레이(styles.css, shimmer 애니메이션)를 띄운 뒤 콘텐츠 페이드인. 스켈레톤 마크업은 `#dtSkel`/`#wishSkel`에 app.js에서 주입.
 
 ## 더 키울 때

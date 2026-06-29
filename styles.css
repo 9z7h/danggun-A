@@ -396,6 +396,7 @@ body{font-family:var(--font); background:#cfc9c1; display:flex; align-items:cent
 .wcard-top{ display:flex; gap:14px; }
 .witem .wph{ width:104px; height:104px; border-radius:12px; overflow:hidden; flex:none; background:#e9e0d4; }
 .witem .wph svg{ width:100%; height:100%; display:block; }
+.witem .wph img{ width:100%; height:100%; object-fit:cover; display:block; }
 .witem .winfo{ flex:1; min-width:0; display:flex; flex-direction:column; }
 .witem .wtop{ display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
 .witem .wprice{ font-size:17px; font-weight:800; color:var(--ink); line-height:1.3; }
@@ -413,5 +414,5 @@ body{font-family:var(--font); background:#cfc9c1; display:flex; align-items:cent
 .wcard-btns{ display:flex; gap:8px; margin-top:14px; }
 .wchat{ flex:1; height:44px; border:1.5px solid #E0E1E4; border-radius:10px; background:#fff;
   font-family:inherit; font-size:15px; font-weight:700; color:var(--ink); cursor:pointer; }
-.wmemo{ width:44px; height:44px; border:1.5px solid #E0E1E4; border-radius:10px; background:#F9F9FA;
+.wmemo{ width:44px; height:44px; border:1.5px solid #E0E1E4; border-radius:10px; background:#fff;
   display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none; }

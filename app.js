@@ -194,15 +194,18 @@ function renderListBody(){
     });
   });
   shBody.querySelectorAll('.fav').forEach(function(f, fi){
+    var poolItem = POOL[fi % POOL.length];
+    if(WISH.some(function(w){ return w._pool === poolItem; })) f.classList.add('on');
     f.addEventListener('click', function(e){
       e.stopPropagation();
       var wasOn = f.classList.contains('on');
       f.classList.toggle('on');
       if(!wasOn){
-        var poolItem = POOL[fi % POOL.length];
-        if(!poolItem.reasons) poolItem.reasons = [];
-        if(!poolItem.memo) poolItem.memo = '';
+        lastFavEl = f;
         openReasonModal(poolItem);
+      } else {
+        var wi = WISH.filter(function(w){ return w._pool === poolItem; })[0];
+        if(wi) WISH.splice(WISH.indexOf(wi), 1);
       }
     });
   });
@@ -428,7 +431,9 @@ function openPage(page){
   page._skelT = setTimeout(function(){ page.classList.remove('loading'); }, 500);
 }
 
+var currentDetailItem = null;
 function openDetail(it){
+  currentDetailItem = it;
   document.getElementById('dtKind').textContent = it.kindFull || (it.k + (it.bldg ? ' (' + it.bldg + ')' : ''));
   document.getElementById('dtPrice').textContent = it.p;
   document.getElementById('dtSub').textContent = it.dist;
@@ -481,6 +486,8 @@ function openDetail(it){
   PHOTO_N = dtImgs ? dtImgs.length : 3;
   renderPhotos();
   goSlide(0, false);
+  var dtFavEl = document.getElementById('dtFav');
+  if(dtFavEl) dtFavEl.classList.toggle('on', WISH.some(function(w){ return w._pool === it; }));
   openPage(detail);
   dtScroll.scrollTop = 0;
   dtAppbar.classList.remove('solid');
@@ -539,7 +546,12 @@ snackAction.addEventListener('click', function(){
 });
 on('dtFav', function(){
   this.classList.toggle('on');
-  if(this.classList.contains('on')) openReasonModal(null);
+  if(this.classList.contains('on')){
+    openReasonModal(null);
+  } else {
+    var wi = WISH.filter(function(w){ return w._pool === currentDetailItem; })[0];
+    if(wi) WISH.splice(WISH.indexOf(wi), 1);
+  }
 });
 
 /* ----- 관심 기록 모달 ----- */
@@ -557,6 +569,7 @@ rmChips.querySelectorAll('.rm-chip').forEach(function(c){
 rmMemo.addEventListener('input', function(){ rmCount.textContent = rmMemo.value.length + ' / 200'; });
 var rmCard = reasonModal.querySelector('.rm-card');
 var reasonModalItem = null;
+var lastFavEl = null;
 var rmOriginalReasons = [];
 var rmOriginalMemo = '';
 function openReasonModal(item){
@@ -596,30 +609,75 @@ function closeReasonModal(){
 }
 var savedReasons = [];
 var savedMemo = '';
+function poolToWish(it, reasons, memo){
+  return {
+    img: (it.imgs && it.imgs.length) ? it.imgs[0] : null,
+    ph: 'room',
+    t: it.k + ' · ' + it.m2 + ' · ' + it.fl,
+    desc: it.mg + ' · ' + it.dist,
+    loc: '관악구 ' + (it.dong || '봉천동'),
+    tm: '방금 전',
+    p: it.p,
+    chat: it.chat || 0,
+    like: it.like || 0,
+    reasons: reasons,
+    memo: memo,
+    _pool: it
+  };
+}
 on('rmConfirm', function(){
   var reasons = [];
   rmChips.querySelectorAll('.rm-chip.on').forEach(function(c){ reasons.push(c.textContent); });
   var memo = rmMemo.value.trim();
-  /* 변경 여부 비교 */
   var changed = memo !== rmOriginalMemo
     || reasons.length !== rmOriginalReasons.length
     || reasons.some(function(r){ return rmOriginalReasons.indexOf(r) === -1; });
   if(reasonModalItem){
-    reasonModalItem.reasons = reasons;
-    reasonModalItem.memo = memo;
-    closeReasonModal();
-    renderWish();
-    if(changed) showSnackbar('관심 기록이 저장되었어요.', null, null, 3000);
+    var isWishEdit = !!reasonModalItem.ph;
+    if(isWishEdit){
+      /* 기존 관심 아이템 편집 */
+      reasonModalItem.reasons = reasons;
+      reasonModalItem.memo = memo;
+      closeReasonModal();
+      renderWish();
+      if(changed) showSnackbar('관심 기록이 저장되었어요.', null, null, 3000);
+    } else {
+      /* 리스트 카드 하트 → WISH에 추가 */
+      var already = WISH.some(function(w){ return w._pool === reasonModalItem; });
+      if(!already) WISH.unshift(poolToWish(reasonModalItem, reasons, memo));
+      closeReasonModal();
+      if(changed || !already) showSnackbar('관심목록에 추가했어요.', '바로가기', openWishlist, 4000);
+    }
   } else {
-    savedReasons = reasons;
-    savedMemo = memo;
-    closeReasonModal();
-    if(changed) showSnackbar('관심 기록이 저장되었어요.', '바로가기', openWishlist, 4000, 98);
+    /* 상세 페이지 하트 → WISH에 추가 */
+    var src = currentDetailItem;
+    if(src){
+      var alreadyDt = WISH.some(function(w){ return w._pool === src; });
+      if(!alreadyDt) WISH.unshift(poolToWish(src, reasons, memo));
+      closeReasonModal();
+      showSnackbar('관심목록에 추가했어요.', '바로가기', openWishlist, 4000, 98);
+    } else {
+      closeReasonModal();
+    }
   }
 });
-rmOverlay.addEventListener('click', closeReasonModal);
+function cancelReasonModal(){
+  /* 리스트 카드 하트 → 취소 시 하트 OFF 복원 (WISH에 없으면) */
+  if(lastFavEl && reasonModalItem && !reasonModalItem.ph){
+    if(!WISH.some(function(w){ return w._pool === reasonModalItem; }))
+      lastFavEl.classList.remove('on');
+  }
+  /* 상세 하트 → 취소 시 WISH 상태로 복원 */
+  if(!reasonModalItem){
+    var dtFavEl2 = document.getElementById('dtFav');
+    if(dtFavEl2) dtFavEl2.classList.toggle('on', WISH.some(function(w){ return w._pool === currentDetailItem; }));
+  }
+  lastFavEl = null;
+  closeReasonModal();
+}
+rmOverlay.addEventListener('click', cancelReasonModal);
 reasonModal.addEventListener('click', function(e){
-  if(!reasonModal.querySelector('.rm-card').contains(e.target)) closeReasonModal();
+  if(!reasonModal.querySelector('.rm-card').contains(e.target)) cancelReasonModal();
 });
 detail.querySelectorAll('.locseg button').forEach(function(b){
   b.addEventListener('click', function(){
@@ -672,7 +730,7 @@ function witemHTML(it){
   if(rest > 0) chips += '<span class="wrchip wrmore">+'+rest+'</span>';
   return '<div class="witem">'
     + '<div class="wcard-top">'
-    +   '<div class="wph">'+wPhoto(it.ph)+'</div>'
+    +   '<div class="wph">'+(it.img ? '<img src="'+it.img+'" alt="" draggable="false" loading="lazy">' : wPhoto(it.ph))+'</div>'
     +   '<div class="winfo">'
     +     '<div class="wtop">'
     +       '<div class="wprice">'+it.p+'</div>'
@@ -706,7 +764,10 @@ function renderWish(){
     var it = sorted[i];
     node.querySelector('.wheart').addEventListener('click', function(e){
       e.stopPropagation();
-      openReasonModal(it);
+      var idx = WISH.indexOf(it);
+      if(idx !== -1) WISH.splice(idx, 1);
+      renderWish();
+      showSnackbar('관심목록에서 삭제했어요.', null, null, 3000);
     });
     node.querySelector('.wmemo').addEventListener('click', function(e){
       e.stopPropagation();
@@ -716,7 +777,7 @@ function renderWish(){
       e.stopPropagation();
     });
     node.addEventListener('click', function(){
-      openDetail({ kindFull: it.t, p: it.p, dist: it.loc });
+      openDetail(it._pool || { kindFull: it.t, p: it.p, dist: it.loc });
     });
   });
 }
