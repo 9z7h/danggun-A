@@ -156,7 +156,7 @@ function listingCard(it, i){
   var area = areaMode ? it.py : it.m2;
   var stats = '';
   if(it.chat>0) stats += '<span class="st">'+IC_CHAT+it.chat+'</span>';
-  stats += '<span class="st">'+IC_HEART_F+it.like+'</span>';
+  stats += '<span class="st">'+GRAY_HEART+it.like+'</span>';
   var viewedOverlay = viewedPool.has(i)
     ? '<div class="ph-viewed"><span class="badge-viewed">'+EYE_SVG+'본 매물</span></div>'
     : '';
