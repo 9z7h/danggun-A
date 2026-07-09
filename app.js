@@ -560,13 +560,19 @@ var rmOverlay = document.getElementById('rmOverlay');
 var rmChips = document.getElementById('rmChips');
 var rmMemo = document.getElementById('rmMemo');
 var rmCount = document.getElementById('rmCount');
+var rmConfirmBtn = document.getElementById('rmConfirm');
 rmChips.innerHTML = REASONS.map(function(r){
   return '<button class="rm-chip" type="button">'+r+'</button>';
 }).join('');
+function updateRmConfirmState(){
+  var hasChip = !!rmChips.querySelector('.rm-chip.on');
+  var hasMemo = rmMemo.value.trim().length > 0;
+  rmConfirmBtn.classList.toggle('active', hasChip || hasMemo);
+}
 rmChips.querySelectorAll('.rm-chip').forEach(function(c){
-  c.addEventListener('click', function(){ c.classList.toggle('on'); });
+  c.addEventListener('click', function(){ c.classList.toggle('on'); updateRmConfirmState(); });
 });
-rmMemo.addEventListener('input', function(){ rmCount.textContent = rmMemo.value.length + ' / 200'; });
+rmMemo.addEventListener('input', function(){ rmCount.textContent = rmMemo.value.length + ' / 200'; updateRmConfirmState(); });
 var rmCard = reasonModal.querySelector('.rm-card');
 var reasonModalItem = null;
 var lastFavEl = null;
@@ -586,6 +592,7 @@ function openReasonModal(item){
   /* 변경 감지용 스냅샷 */
   rmOriginalReasons = preReasons.slice();
   rmOriginalMemo = preMemo;
+  updateRmConfirmState();
   rmOverlay.classList.add('open');
   reasonModal.style.visibility = 'visible';
   reasonModal.style.pointerEvents = 'auto';
