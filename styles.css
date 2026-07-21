@@ -342,8 +342,7 @@ body{font-family:var(--font); background:#cfc9c1; display:flex; align-items:cent
 .rm-head{ display:flex; align-items:center; justify-content:space-between; }
 .rm-head h3{ font-size:18px; font-weight:700; color:var(--ink); }
 .rm-confirm{ border:none; background:none; cursor:pointer; font-family:inherit;
-  font-size:16px; font-weight:500; color:var(--ink-3); padding:4px 0; transition:color .15s; }
-.rm-confirm.active{ color:var(--carrot); font-weight:700; }
+  font-size:16px; font-weight:700; color:var(--carrot); padding:4px 0; }
 .rm-sub{ font-size:16px; color:var(--ink-3); margin-bottom:16px; }
 .rm-chips{ display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:16px; }
 .rm-chip{ height:48px; padding:0 6px; border-radius:10px; border:1px solid #DCDEE3; background:#fff;
@@ -417,5 +416,6 @@ body{font-family:var(--font); background:#cfc9c1; display:flex; align-items:cent
 .wcard-btns{ display:flex; gap:8px; margin-top:14px; }
 .wchat{ flex:1; height:44px; border:1.5px solid #E0E1E4; border-radius:10px; background:#fff;
   font-family:inherit; font-size:15px; font-weight:700; color:var(--ink); cursor:pointer; }
-.wmemo{ width:44px; height:44px; border:1.5px solid #E0E1E4; border-radius:10px; background:#fff;
-  display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none; }
+.wmemo{ height:44px; padding:0 16px; border:0px solid #E0E1E4; border-radius:10px;
+  display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; flex:none;
+  font-family:inherit; font-size:15px; font-weight:700; color:var(--ink);background: F3F4F5; }
