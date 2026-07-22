@@ -201,8 +201,7 @@ function renderListBody(){
       var wasOn = f.classList.contains('on');
       f.classList.toggle('on');
       if(!wasOn){
-        lastFavEl = f;
-        openReasonModal(poolItem);
+        if(!WISH.some(function(w){ return w._pool === poolItem; })) WISH.unshift(poolToWish(poolItem));
       } else {
         var wi = WISH.filter(function(w){ return w._pool === poolItem; })[0];
         if(wi) WISH.splice(WISH.indexOf(wi), 1);
@@ -331,9 +330,15 @@ var dtAppbar = document.getElementById('dtAppbar');
 var dtTabs = document.getElementById('dtTabs');
 var SECS = ['desc','fac','loc','info','live','agent'];
 
-document.getElementById('facGrid').innerHTML = APPL.map(function(a){
-  return '<div class="fi'+(a[1]?'':' off')+'"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+a[2]+'</svg>'+a[0]+'</div>';
-}).join('');
+var FT_ICONS = [
+  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="14" height="18" rx="2"/><line x1="8" y1="8" x2="14" y2="8"/><line x1="8" y1="12" x2="14" y2="12"/></svg>',
+  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="4" y1="12" x2="20" y2="12"/></svg>',
+  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 9l8-5 8 5v11H4z"/></svg>',
+  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="1"/><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/></svg>',
+  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 16V11l1.5-4h11L19 11v5"/><circle cx="8" cy="16.5" r="1.5"/><circle cx="16" cy="16.5" r="1.5"/></svg>'
+];
+function applPath(name){ var a = APPL.filter(function(x){ return x[0]===name; })[0]; return a ? a[2] : ''; }
+function renderStars(n){ return '★'.repeat(n) + '☆'.repeat(5-n); }
 
 function setActiveTab(sec){
   dtTabs.querySelectorAll('button').forEach(function(b){ b.classList.toggle('on', b.dataset.sec===sec); });
@@ -450,6 +455,80 @@ function openDetail(it){
       +'<div class="desc-row"><span><b>주변시설</b> : '+it.nearby+'</span></div>'
       +'<div class="imm">📅 '+it.avail+'</div>';
   }
+  // 요약 칩 (facts) + 상태줄
+  var factsEl = document.getElementById('dt-facts');
+  if(factsEl){
+    var roomLabel = '방 '+it.rooms.room+'개 / 욕실 '+it.rooms.bath+'개';
+    var facts = [it.mg, it.py, roomLabel, it.fl, it.parking];
+    factsEl.innerHTML = facts.map(function(f,i){ return '<div class="ft">'+FT_ICONS[i]+f+'</div>'; }).join('');
+  }
+  var statEl = document.getElementById('dt-statline');
+  if(statEl) statEl.textContent = '끌올 '+it.stat.up+' · 채팅 '+it.chat+' · 관심 '+it.like+' · 조회 '+it.stat.view;
+  // 시설정보 (매물별 보유 가전)
+  var facGridEl = document.getElementById('facGrid');
+  if(facGridEl){
+    facGridEl.innerHTML = it.appl.map(function(a){
+      return '<div class="fi'+(a[1]?'':' off')+'"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+applPath(a[0])+'</svg>'+a[0]+'</div>';
+    }).join('');
+  }
+  // 위치 탭 (주소 + 인근역)
+  var addrEl = document.getElementById('dt-addr');
+  if(addrEl) addrEl.textContent = it.addr;
+  var stationsEl = document.getElementById('dt-stations');
+  if(stationsEl){
+    stationsEl.innerHTML = it.stations.map(function(s){
+      return '<div class="sub-item"><span class="l2">'+s.line+'</span><span class="nm">'+s.name+'</span><span class="mm">· 도보 '+s.min+'분</span></div>';
+    }).join('');
+  }
+  // 상세정보 표
+  var infoEl = document.getElementById('dt-info-tb');
+  if(infoEl){
+    var rows = [
+      ['매물번호', it.info.no],
+      ['전용면적', it.m2+' ('+it.py+')'],
+      ['방/욕실 수', roomLabel],
+      ['층', it.fl],
+      ['관리비', it.mg.replace('관리비 ','')+' <u>상세보기</u>'],
+      ['총 주차 대수', it.parking],
+      ['반려동물', it.info.pet],
+      ['입주 가능일', it.avail],
+      ['대출가능여부', it.info.loan],
+      ['방향', it.info.dir+' (거실/주실 기준)'],
+      ['사용승인일 (연식)', it.info.built],
+      ['건축물 용도', it.info.use]
+    ];
+    infoEl.innerHTML = rows.map(function(r){ return '<div class="r"><div class="k">'+r[0]+'</div><div class="v">'+r[1]+'</div></div>'; }).join('');
+  }
+  // 살아본 후기
+  var liveEl = document.getElementById('dt-live');
+  if(liveEl){
+    if(!it.liveReviews.length){
+      liveEl.innerHTML = '<div style="text-align:center; padding:24px 0; color:var(--ink-3); font-size:15px; line-height:1.6;">아직 이 건물에 등록된 후기가 없어요.<br>먼저 살아본 이웃의 후기를 남겨보세요.</div>';
+    } else {
+      liveEl.innerHTML = it.liveReviews.map(function(r){
+        return '<div class="review"><div class="rh"><div class="rav"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="9" r="3.2"/><path d="M5.5 19a6.5 6.5 0 0 1 13 0"/></svg></div><div><div class="rn">'+r.name+'</div><div class="stars">'+renderStars(r.stars)+'</div></div></div>'
+          +'<div class="rtext">'+r.text+'</div>'
+          +'<div class="rdate">'+r.date+' 작성 · <b style="color:var(--ink-2);">'+r.tag+'</b></div></div>';
+      }).join('');
+    }
+  }
+  // 중개소 후기
+  var ag = it.agent;
+  if(ag){
+    var set = function(id, val){ var e = document.getElementById(id); if(e) e.textContent = val; };
+    set('dt-agent-name', ag.name);
+    set('dt-agent-stats', ag.stats);
+    set('dt-agent-rating', ag.rating);
+    set('dt-agent-reviewlab', '후기('+ag.reviewCount+')');
+    set('dt-agent-resprate', ag.respRate+'%');
+    set('dt-agent-resptime', ag.respTime);
+    set('dt-agent-rev-name', ag.review.name);
+    set('dt-agent-rev-stars', renderStars(ag.review.stars));
+    set('dt-agent-rev-text', ag.review.text);
+    set('dt-agent-rev-date', ag.review.date+' 작성 · '+ag.review.tag);
+    var revDateEl = document.getElementById('dt-agent-rev-date');
+    if(revDateEl) revDateEl.innerHTML = ag.review.date+' 작성 · <b style="color:var(--ink-2);">'+ag.review.tag+'</b>';
+  }
   // 추천 매물 / 이웃의 관심 매물 섹션 채우기
   (function(){
     var recMain = document.getElementById('recMain');
@@ -547,70 +626,18 @@ snackAction.addEventListener('click', function(){
 on('dtFav', function(){
   this.classList.toggle('on');
   if(this.classList.contains('on')){
-    openReasonModal(null);
+    var src = currentDetailItem;
+    if(src){
+      if(!WISH.some(function(w){ return w._pool === src; })) WISH.unshift(poolToWish(src));
+      showSnackbar('관심목록에 추가했어요.', '바로가기', openWishlist, 4000, 98);
+    }
   } else {
     var wi = WISH.filter(function(w){ return w._pool === currentDetailItem; })[0];
     if(wi) WISH.splice(WISH.indexOf(wi), 1);
   }
 });
 
-/* ----- 관심 기록 모달 ----- */
-var reasonModal = document.getElementById('reasonModal');
-var rmOverlay = document.getElementById('rmOverlay');
-var rmChips = document.getElementById('rmChips');
-var rmMemo = document.getElementById('rmMemo');
-var rmCount = document.getElementById('rmCount');
-var rmConfirmBtn = document.getElementById('rmConfirm');
-rmChips.innerHTML = REASONS.map(function(r){
-  return '<button class="rm-chip" type="button">'+r+'</button>';
-}).join('');
-rmChips.querySelectorAll('.rm-chip').forEach(function(c){
-  c.addEventListener('click', function(){ c.classList.toggle('on'); });
-});
-rmMemo.addEventListener('input', function(){ rmCount.textContent = rmMemo.value.length + ' / 200'; });
-var rmCard = reasonModal.querySelector('.rm-card');
-var reasonModalItem = null;
-var lastFavEl = null;
-var rmOriginalReasons = [];
-var rmOriginalMemo = '';
-function openReasonModal(item){
-  reasonModalItem = item || null;
-  /* 칩 초기화 후 아이템 또는 전역 저장값으로 pre-select */
-  var preReasons = item ? (item.reasons || []) : (savedReasons || []);
-  rmChips.querySelectorAll('.rm-chip').forEach(function(c){
-    c.classList.toggle('on', preReasons.indexOf(c.textContent) !== -1);
-  });
-  /* 메모 초기화 */
-  var preMemo = item ? (item.memo || '') : (savedMemo || '');
-  rmMemo.value = preMemo;
-  rmCount.textContent = preMemo.length + ' / 200';
-  /* 변경 감지용 스냅샷 */
-  rmOriginalReasons = preReasons.slice();
-  rmOriginalMemo = preMemo;
-  rmOverlay.classList.add('open');
-  reasonModal.style.visibility = 'visible';
-  reasonModal.style.pointerEvents = 'auto';
-  rmCard.style.transition = 'none';
-  rmCard.style.transform = 'translateY(100%)';
-  rmCard.getBoundingClientRect(); /* reflow: 초기값 확정 */
-  setTimeout(function(){
-    rmCard.style.transition = 'transform .3s cubic-bezier(.22,.61,.36,1)';
-    rmCard.style.transform = 'translateY(0)';
-  }, 20);
-}
-function closeReasonModal(){
-  rmOverlay.classList.remove('open');
-  rmCard.style.transition = 'transform .3s cubic-bezier(.22,.61,.36,1)';
-  rmCard.style.transform = 'translateY(100%)';
-  clearTimeout(reasonModal._closeT);
-  reasonModal._closeT = setTimeout(function(){
-    reasonModal.style.visibility = '';
-    reasonModal.style.pointerEvents = '';
-  }, 320);
-}
-var savedReasons = [];
-var savedMemo = '';
-function poolToWish(it, reasons, memo){
+function poolToWish(it){
   return {
     img: (it.imgs && it.imgs.length) ? it.imgs[0] : null,
     ph: 'room',
@@ -621,65 +648,9 @@ function poolToWish(it, reasons, memo){
     p: it.p,
     chat: it.chat || 0,
     like: it.like || 0,
-    reasons: reasons,
-    memo: memo,
     _pool: it
   };
 }
-on('rmConfirm', function(){
-  var reasons = [];
-  rmChips.querySelectorAll('.rm-chip.on').forEach(function(c){ reasons.push(c.textContent); });
-  var memo = rmMemo.value.trim();
-  var changed = memo !== rmOriginalMemo
-    || reasons.length !== rmOriginalReasons.length
-    || reasons.some(function(r){ return rmOriginalReasons.indexOf(r) === -1; });
-  if(reasonModalItem){
-    var isWishEdit = !!reasonModalItem.ph;
-    if(isWishEdit){
-      /* 기존 관심 아이템 편집 */
-      reasonModalItem.reasons = reasons;
-      reasonModalItem.memo = memo;
-      closeReasonModal();
-      renderWish();
-      if(changed) showSnackbar('관심 기록이 저장되었어요.', null, null, 3000);
-    } else {
-      /* 리스트 카드 하트 → WISH에 추가 */
-      var already = WISH.some(function(w){ return w._pool === reasonModalItem; });
-      if(!already) WISH.unshift(poolToWish(reasonModalItem, reasons, memo));
-      closeReasonModal();
-      if(changed || !already) showSnackbar('관심목록에 추가했어요.', '바로가기', openWishlist, 4000);
-    }
-  } else {
-    /* 상세 페이지 하트 → WISH에 추가 */
-    var src = currentDetailItem;
-    if(src){
-      var alreadyDt = WISH.some(function(w){ return w._pool === src; });
-      if(!alreadyDt) WISH.unshift(poolToWish(src, reasons, memo));
-      closeReasonModal();
-      showSnackbar('관심목록에 추가했어요.', '바로가기', openWishlist, 4000, 98);
-    } else {
-      closeReasonModal();
-    }
-  }
-});
-function cancelReasonModal(){
-  /* 리스트 카드 하트 → 취소 시 하트 OFF 복원 (WISH에 없으면) */
-  if(lastFavEl && reasonModalItem && !reasonModalItem.ph){
-    if(!WISH.some(function(w){ return w._pool === reasonModalItem; }))
-      lastFavEl.classList.remove('on');
-  }
-  /* 상세 하트 → 취소 시 WISH 상태로 복원 */
-  if(!reasonModalItem){
-    var dtFavEl2 = document.getElementById('dtFav');
-    if(dtFavEl2) dtFavEl2.classList.toggle('on', WISH.some(function(w){ return w._pool === currentDetailItem; }));
-  }
-  lastFavEl = null;
-  closeReasonModal();
-}
-rmOverlay.addEventListener('click', cancelReasonModal);
-reasonModal.addEventListener('click', function(e){
-  if(!reasonModal.querySelector('.rm-card').contains(e.target)) cancelReasonModal();
-});
 detail.querySelectorAll('.locseg button').forEach(function(b){
   b.addEventListener('click', function(){
     detail.querySelectorAll('.locseg button').forEach(function(x){ x.classList.remove('on'); });
@@ -725,10 +696,6 @@ function wPhoto(t){
   return '<svg viewBox="0 0 104 104" preserveAspectRatio="none"><rect width="104" height="104" fill="'+w+'"/><rect y="64" width="104" height="40" fill="'+f+'"/><rect x="10" y="16" width="32" height="38" fill="#fff" opacity=".85"/><rect x="48" y="24" width="22" height="30" fill="#fff" opacity=".5"/><rect x="76" y="28" width="18" height="26" fill="#fff" opacity=".35"/></svg>';
 }
 function witemHTML(it){
-  var reasons = it.reasons || [];
-  var chips = reasons.slice(0, 3).map(function(r){ return '<span class="wrchip">'+r+'</span>'; }).join('');
-  var rest = reasons.length - Math.min(reasons.length, 3);
-  if(rest > 0) chips += '<span class="wrchip wrmore">+'+rest+'</span>';
   return '<div class="witem">'
     + '<div class="wcard-top">'
     +   '<div class="wph">'+(it.img ? '<img src="'+it.img+'" alt="" draggable="false" loading="lazy">' : wPhoto(it.ph))+'</div>'
@@ -739,15 +706,10 @@ function witemHTML(it){
     +     '</div>'
     +     '<div class="wsub1">'+it.t+'</div>'
     +     (it.desc ? '<div class="wsub2">'+it.desc+'</div>' : '')
-    +     (chips ? '<div class="wrchips">'+chips+'</div>' : '')
     +     '<div class="wfoot"><span class="wloc">'+it.loc+' · '+it.tm+'</span>'
     +       '<span class="wlike">'+GRAY_HEART+it.like+'</span>'
     +     '</div>'
     +   '</div>'
-    + '</div>'
-    + '<div class="wcard-btns">'
-    +   '<button class="wchat">채팅하기</button>'
-    +   '<button class="wmemo">'+IC_MEMO+'<span>기록</span></button>'
     + '</div>'
     + '</div>';
 }
@@ -756,9 +718,7 @@ function renderWish(){
     wishList.innerHTML = '<div style="text-align:center; padding:80px 0; color:var(--ink-3); font-size:15px; line-height:1.6;">관심목록이 비었어요.<br>마음에 드는 매물에 하트를 눌러보세요.</div>';
     return;
   }
-  var sorted = WISH.slice().sort(function(a, b){
-    return (b.reasons || []).length - (a.reasons || []).length;
-  });
+  var sorted = WISH.slice();
   wishList.innerHTML = sorted.map(witemHTML).join('');
   var nodes = wishList.querySelectorAll('.witem');
   nodes.forEach(function(node, i){
@@ -769,13 +729,6 @@ function renderWish(){
       if(idx !== -1) WISH.splice(idx, 1);
       renderWish();
       showSnackbar('관심목록에서 삭제했어요.', null, null, 3000);
-    });
-    node.querySelector('.wmemo').addEventListener('click', function(e){
-      e.stopPropagation();
-      openReasonModal(it);
-    });
-    node.querySelector('.wchat').addEventListener('click', function(e){
-      e.stopPropagation();
     });
     node.addEventListener('click', function(){
       openDetail(it._pool || { kindFull: it.t, p: it.p, dist: it.loc });
