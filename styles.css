@@ -22,10 +22,14 @@
   --font:"Pretendard Variable",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
 }
 *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
-html,body{height:100%;}
-body{font-family:var(--font); background:#cfc9c1; display:flex; align-items:center; justify-content:center; min-height:100vh; padding:24px;}
+html,body{height:100%; overflow:hidden;}
+body{font-family:var(--font); background:#cfc9c1; display:flex; align-items:center; justify-content:center; height:100dvh;
+  --sw: min(100vw, 412px); --sh: min(100dvh, 915px);
+  --phone-scale: min(calc(var(--sw) / 375px), calc(var(--sh) / 812px));
+}
 
-.phone{ position:relative; width:375px; height:812px; overflow:hidden; }
+.phone{ position:relative; width:375px; height:812px; overflow:hidden;
+  transform: scale(var(--phone-scale)); transform-origin:center center; flex:none; }
 .screen{ position:absolute; inset:0; background:var(--map-bg); overflow:hidden; font-family:var(--font); }
 
 .map-vp{ position:absolute; inset:0; overflow:hidden; touch-action:none; cursor:grab; }
