@@ -348,6 +348,46 @@
   </div>
 
   <script src="data.js"></script>
+  <!-- ▼ 여기에 추가 ▼ -->
+<script>
+(function () {
+  var KEY = 'ut2_wish_v1';
+
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(WISH)); } catch (e) {}
+  }
+
+  // 주소 뒤에 ?reset 을 붙이면 초기화 (참여자 교체 시 사용)
+  if (location.search.indexOf('reset') > -1) {
+    try { localStorage.removeItem(KEY); } catch (e) {}
+  }
+
+  // WISH 배열이 바뀔 때마다 자동 저장
+  ['push', 'splice', 'pop', 'shift', 'unshift'].forEach(function (m) {
+    var orig = Array.prototype[m];
+    WISH[m] = function () {
+      var r = orig.apply(this, arguments);
+      save();
+      return r;
+    };
+  });
+
+  // 저장된 데이터 복원
+  try {
+    var raw = localStorage.getItem(KEY);
+    if (raw) {
+      var arr = JSON.parse(raw);
+      if (Array.isArray(arr)) {
+        WISH.length = 0;
+        for (var i = 0; i < arr.length; i++) Array.prototype.push.call(WISH, arr[i]);
+      }
+    }
+  } catch (e) {}
+
+  window.addEventListener('pagehide', save);
+})();
+</script>
+<!-- ▲ 여기까지 ▲ -->
   <script src="app.js"></script>
 </body>
 </html>
