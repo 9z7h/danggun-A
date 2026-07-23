@@ -352,39 +352,36 @@
 <script>
 (function () {
   var KEY = 'ut2_wish_v1';
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(WISH)); }catch(e){} }
 
-  function save() {
-    try { localStorage.setItem(KEY, JSON.stringify(WISH)); } catch (e) {}
+  // 주소 어디에든 reset 이 있으면 초기화 (?reset, #reset, 파라미터가 섞여도 인식)
+  var wantReset = location.href.toLowerCase().indexOf('reset') > -1;
+  if (wantReset) {
+    try { localStorage.removeItem(KEY); } catch(e){}
+    // 초기화 후 주소 정리 → 도중에 새로고침해도 저장이 지워지지 않음
+    try { history.replaceState(null, '', location.pathname); } catch(e){}
   }
 
-  // 주소 뒤에 ?reset 을 붙이면 초기화 (참여자 교체 시 사용)
-  if (location.search.indexOf('reset') > -1) {
-    try { localStorage.removeItem(KEY); } catch (e) {}
-  }
-
-  // WISH 배열이 바뀔 때마다 자동 저장
-  ['push', 'splice', 'pop', 'shift', 'unshift'].forEach(function (m) {
+  ['push','splice','pop','shift','unshift'].forEach(function(m){
     var orig = Array.prototype[m];
-    WISH[m] = function () {
-      var r = orig.apply(this, arguments);
-      save();
-      return r;
-    };
+    WISH[m] = function(){ var r = orig.apply(this, arguments); save(); return r; };
   });
 
-  // 저장된 데이터 복원
-  try {
-    var raw = localStorage.getItem(KEY);
-    if (raw) {
-      var arr = JSON.parse(raw);
-      if (Array.isArray(arr)) {
-        WISH.length = 0;
-        for (var i = 0; i < arr.length; i++) Array.prototype.push.call(WISH, arr[i]);
+  if (!wantReset) {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) {
+        var arr = JSON.parse(raw);
+        if (Array.isArray(arr)) {
+          WISH.length = 0;
+          for (var i=0;i<arr.length;i++) Array.prototype.push.call(WISH, arr[i]);
+        }
       }
-    }
-  } catch (e) {}
+    } catch(e){}
+  }
 
   window.addEventListener('pagehide', save);
+  window.resetWish = function(){ try{localStorage.removeItem(KEY)}catch(e){}; WISH.length=0; location.reload(); };
 })();
 </script>
 <!-- ▲ 여기까지 ▲ -->
