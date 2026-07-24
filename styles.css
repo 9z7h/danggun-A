@@ -27,6 +27,13 @@ body{font-family:var(--font); background:#cfc9c1; display:flex; align-items:cent
   --sw: min(100vw, 412px); --sh: min(100dvh, 915px);
   --phone-scale: min(calc(var(--sw) / 375px), calc(var(--sh) / 812px));
 }
+/* 실제 모바일/터치 기기에서는 375x812 비율을 유지하며 화면을 꽉 채우도록(cover) 확대 — 상하단 회색 여백 제거 */
+@media (hover:none) and (pointer:coarse){
+  body{
+    --sw: 100vw; --sh: 100dvh;
+    --phone-scale: max(calc(var(--sw) / 375px), calc(var(--sh) / 812px));
+  }
+}
 
 .phone{ position:relative; width:375px; height:812px; overflow:hidden;
   transform: scale(var(--phone-scale)); transform-origin:center center; flex:none; }
