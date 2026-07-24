@@ -32,7 +32,9 @@ body{font-family:var(--font); background:#cfc9c1; display:flex; align-items:cent
   body{
     --sw: 100vw; --sh: 100dvh;
     --phone-scale: max(calc(var(--sw) / 375px), calc(var(--sh) / 812px));
+    align-items:flex-end; /* 기기 비율이 375:812보다 세로로 길면 상단(상태바 영역)만 잘리고 하단 탭바는 화면 하단에 고정 */
   }
+  .phone{ transform-origin:center bottom; }
 }
 
 .phone{ position:relative; width:375px; height:812px; overflow:hidden;
