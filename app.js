@@ -161,10 +161,10 @@ function listingCard(it, i){
     ? '<div class="ph-viewed"><span class="badge-viewed">'+EYE_SVG+'본 매물</span></div>'
     : '';
   return '<div class="lst" data-i="'+i+'">'
+    + '<button class="fav" aria-label="찜">'+IC_HEART_O+'</button>'
     + '<div class="ph">'+thumbImg(it, i)+viewedOverlay+'</div>'
     + '<div class="info">'
-    +   '<div class="ptop"><div class="price">'+it.p+'</div>'
-    +     '<button class="fav" aria-label="찜">'+IC_HEART_O+'</button></div>'
+    +   '<div class="price">'+it.p+'</div>'
     +   '<div class="meta">'+it.k+' · '+area+' · '+it.fl+'</div>'
     +   '<div class="meta sub">'+it.mg+' · '+it.dist+'</div>'
     +   (it.best ? '<div class="badge2">우수 중개소</div>' : '')
@@ -641,7 +641,7 @@ function poolToWish(it){
   return {
     img: (it.imgs && it.imgs.length) ? it.imgs[0] : null,
     ph: 'room',
-    t: it.k + ' · ' + it.m2 + ' · ' + it.fl,
+    k: it.k,
     desc: it.mg + ' · ' + it.dist,
     loc: '관악구 ' + (it.dong || '봉천동'),
     tm: '방금 전',
@@ -697,20 +697,17 @@ function wPhoto(t){
 }
 function witemHTML(it){
   return '<div class="witem">'
+    + '<button class="wheart" aria-label="찜 취소"><svg width="24" height="24" viewBox="0 0 24 24" fill="var(--carrot)"><path d="M12 20.5s-7-4.4-9.3-8.4C1 8.7 3.2 5.5 6.5 5.5 8.7 5.5 12 8 12 8s3.3-2.5 5.5-2.5C20.8 5.5 23 8.7 21.3 12.1 19 16.1 12 20.5 12 20.5z"/></svg></button>'
     + '<div class="wcard-top">'
     +   '<div class="wph">'+(it.img ? '<img src="'+it.img+'" alt="" draggable="false" loading="lazy">' : wPhoto(it.ph))+'</div>'
     +   '<div class="winfo">'
-    +     '<div class="wtop">'
-    +       '<div class="wprice">'+it.p+'</div>'
-    +       '<button class="wheart" aria-label="찜 취소"><svg width="24" height="24" viewBox="0 0 24 24" fill="#FF6F0F"><path d="M12 20.5s-7-4.4-9.3-8.4C1 8.7 3.2 5.5 6.5 5.5 8.7 5.5 12 8 12 8s3.3-2.5 5.5-2.5C20.8 5.5 23 8.7 21.3 12.1 19 16.1 12 20.5 12 20.5z"/></svg></button>'
-    +     '</div>'
-    +     '<div class="wsub1">'+it.t+'</div>'
-    +     (it.desc ? '<div class="wsub2">'+it.desc+'</div>' : '')
-    +     '<div class="wfoot"><span class="wloc">'+it.loc+' · '+it.tm+'</span>'
-    +       '<span class="wlike">'+GRAY_HEART+it.like+'</span>'
-    +     '</div>'
+    +     '<div class="wkind">'+it.k+'</div>'
+    +     '<div class="wprice">'+it.p+'</div>'
+    +     (it.desc ? '<div class="wdesc">'+it.desc+'</div>' : '')
+    +     '<div class="wloc">'+it.loc+' · '+it.tm+'</div>'
     +   '</div>'
     + '</div>'
+    + '<div class="wcard-btns"><button class="wchat">채팅하기</button></div>'
     + '</div>';
 }
 function renderWish(){
@@ -730,8 +727,11 @@ function renderWish(){
       renderWish();
       showSnackbar('관심목록에서 삭제했어요.', null, null, 3000);
     });
+    node.querySelector('.wchat').addEventListener('click', function(e){
+      e.stopPropagation();
+    });
     node.addEventListener('click', function(){
-      openDetail(it._pool || { kindFull: it.t, p: it.p, dist: it.loc });
+      openDetail(it._pool || { kindFull: it.k, p: it.p, dist: it.loc });
     });
   });
 }
